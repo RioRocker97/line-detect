@@ -1,0 +1,10 @@
+__pycache__/
+.vscode/
+yolov5/
+detect123/
+models/__pycache__/
+utils/__pycache__/
+
+*.jpg
+*.png
+*.pt
