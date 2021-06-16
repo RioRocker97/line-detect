@@ -8,3 +8,5 @@ utils/__pycache__/
 *.jpg
 *.png
 *.pt
+
+mykey.json
