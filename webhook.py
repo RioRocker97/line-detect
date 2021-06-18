@@ -41,13 +41,13 @@ def get_img(id):
         
     else:
         print("error")
-def text_reply(reply_token,user_id="123",msg_type="text"):
+def text_reply(reply_token,user_id="123",msg_type="text",msg="Hello from developer's shiity PC"):
     data = json.dumps({
         "replyToken": reply_token,
         "messages":[
             {
                 "type":"text",
-                "text":"Hello from ur shitty PC"
+                "text":msg
             }
         ]
     })
@@ -69,9 +69,10 @@ def text_reply(reply_token,user_id="123",msg_type="text"):
     reply.close()
 def detect_reply(user_id):
 
+    num = len(os.listdir('./result'))+1
     prepareYolo('yolov5s.pt',confidence=0.4,loadFromImage=True,imageSource='raw.jpg')
     res = runYolo()
-    cv2.imwrite('./result/res.jpg',res)
+    cv2.imwrite('./result/res'+str(num)+'.jpg',res)
 
     webhook = get_webhook_endpoint()
     data = json.dumps({
@@ -79,8 +80,8 @@ def detect_reply(user_id):
         "messages":[
             {
                 "type":"image",
-                "originalContentUrl": webhook+'/res/res.jpg',
-                "previewImageUrl": webhook+'/res/res.jpg'
+                "originalContentUrl": webhook+'/res/res'+str(num)+'.jpg',
+                "previewImageUrl": webhook+'/res/res'+str(num)+'.jpg'
             }
         ]
     })
@@ -114,12 +115,11 @@ def respond():
                 print("from : ",address['userId'])
                 print("Text msg : ",payload['text'])
                 text_reply(token)
-                time.sleep(3)
-                detect_reply(address['userId'])
             if payload['type'] == 'image':
                 user_id = address['userId']
                 img_id = payload['id']
                 print("LINE image ID : ",img_id)
+                text_reply(token,msg="Processing.... Please Wait")
                 get_img(img_id)
                 detect_reply(user_id)
 
