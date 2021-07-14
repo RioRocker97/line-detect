@@ -1,47 +1,34 @@
 from flask import Flask, request, Response,send_file
 from yolo_detect import prepareYolo,runYolo
 from io import BytesIO
-import torch,subprocess,cv2,os,pycurl,json,certifi,time
+import torch,subprocess,cv2,os,json,certifi,time,urllib3
 app = Flask(__name__)
-access_token = "m2QfiJ4wsiIYdCgooSSbxzdO/PqjQXZ1//G1wwKRfPhNW/vieinIHB2Y7ouVW3NVXoMkdOKyHCeJaM5g2eXjKWLNGPaumDOjWugd1+VxlLh65Q4ZM0VunHxjlxErRjXQp9mapvzudJ6yJMZ/qImobgdB04t89/1O/w1cDnyilFU="
+access_token = "vynoK6xqJeqGeBqSWPO5E1p0H2PNCgKyfBO2xwNshzWvK5Dh8IeKIn9G4mQJyO/q9+2ElnqOcp4iRvsN+3QtiRscMdJkgcolppMYqYsvg30p+PERkxMRGdJ+xog8jD0Lc1lvtgothprXx4zLmg4mhgdB04t89/1O/w1cDnyilFU="
 # will do access_token encryption later 
 ####################
+HTTP = urllib3.PoolManager()
+####################
 def get_webhook_endpoint():
-    reply = pycurl.Curl()
-    rep = BytesIO()
-    reply.setopt(pycurl.URL,'https://api.line.me/v2/bot/channel/webhook/endpoint')
-    reply.setopt(pycurl.CAINFO,certifi.where())
-    reply.setopt(pycurl.HTTPHEADER,[
-        'Content-Type: application/json',
-        'Authorization: Bearer '+ access_token
-    ])
-    reply.setopt(pycurl.WRITEDATA,rep)
-    reply.perform()
-
-    if(str(reply.getinfo(pycurl.HTTP_CODE)) == '200'):
-        body = json.loads(rep.getvalue())['endpoint']
+    rep = HTTP.request('GET','https://api.line.me/v2/bot/channel/webhook/endpoint',headers={
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer '+ access_token
+    })
+    if str(rep.status) == '200':
+        body = json.loads(rep.data.decode('UTF-8'))['endpoint']
         return body
     else:
-        return "error"
+        return "ERROR"
 def get_img(id):
-    reply = pycurl.Curl()
-    rep = BytesIO()
-    reply.setopt(pycurl.URL,'https://api-data.line.me/v2/bot/message/'+id+'/content')
-    reply.setopt(pycurl.CAINFO,certifi.where())
-    reply.setopt(pycurl.HTTPHEADER,[
-        'Authorization: Bearer '+ access_token
-    ])
-    reply.setopt(pycurl.WRITEDATA,rep)
-    reply.perform()
-
-    if(str(reply.getinfo(pycurl.HTTP_CODE)) == '200'):
+    rep = HTTP.request('GET','https://api-data.line.me/v2/bot/message/'+id+'/content',headers={
+        'Authorization': 'Bearer '+ access_token
+    })
+    if str(rep.status) == '200':
         img = open('raw.jpg','wb')
-        img.write(rep.getvalue())
+        img.write(rep.data)
         img.close()
-        
     else:
-        print("error")
-def text_reply(reply_token,user_id="123",msg_type="text",msg="Hello from developer's shiity PC"):
+        print('Error At Get-IMG',rep.status)
+def text_reply(reply_token,user_id="123",msg_type="text",msg="This reply came from developer's Laptop"):
     data = json.dumps({
         "replyToken": reply_token,
         "messages":[
@@ -50,23 +37,16 @@ def text_reply(reply_token,user_id="123",msg_type="text",msg="Hello from develop
                 "text":msg
             }
         ]
-    })
+    }).encode('UTF-8')
 
-    reply = pycurl.Curl()
-    reply.setopt(pycurl.URL,'https://api.line.me/v2/bot/message/reply')
-    reply.setopt(pycurl.POST,1)
-    reply.setopt(pycurl.CAINFO,certifi.where())
-    reply.setopt(pycurl.HTTPHEADER,[
-        'Content-Type: application/json',
-        'Authorization: Bearer '+ access_token
-    ])
-    reply.setopt(pycurl.POSTFIELDS,data)
-    reply.perform()
-    if(str(reply.getinfo(pycurl.HTTP_CODE)) == '200'):
+    rep = HTTP.request('POST','https://api.line.me/v2/bot/message/reply',body=data,headers={
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer '+ access_token
+    })
+    if str(rep.status) == '200':
         print("Reply Ok")
     else :
-        print("Reply Error ",reply.getinfo(pycurl.HTTP_CODE))
-    reply.close()
+        print("Reply Error ", rep.status)
 def detect_reply(user_id):
 
     num = len(os.listdir('./result'))+1
@@ -84,22 +64,16 @@ def detect_reply(user_id):
                 "previewImageUrl": webhook+'/res/res'+str(num)+'.jpg'
             }
         ]
-    })
-    reply = pycurl.Curl()
-    reply.setopt(pycurl.URL,'https://api.line.me/v2/bot/message/push')
-    reply.setopt(pycurl.POST,1)
-    reply.setopt(pycurl.CAINFO,certifi.where())
-    reply.setopt(pycurl.HTTPHEADER,[
-        'Content-Type: application/json',
-        'Authorization: Bearer '+ access_token
-    ])
-    reply.setopt(pycurl.POSTFIELDS,data)
-    reply.perform()
+    }).encode('UTF-8')
 
-    if(str(reply.getinfo(pycurl.HTTP_CODE)) == '200'):
-        print("Push Ok")
-    else :
-        print("Push Error ",reply.getinfo(pycurl.HTTP_CODE))
+    rep = HTTP.request('POST','https://api.line.me/v2/bot/message/push',body=data,headers={
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer '+ access_token
+    })
+    if str(rep.status) == '200':
+        print('PUSH ok')
+    else:
+        print ('PUSH error',rep.status)
 ####################
 
 

@@ -1,12 +1,14 @@
 __pycache__/
 .vscode/
 yolov5/
-detect123/
+my_detect/
 models/__pycache__/
 utils/__pycache__/
 
+*.whl
 *.jpg
 *.png
 *.pt
 
 mykey.json
+.dockerignore
